@@ -13,7 +13,7 @@ env:
 
 jobs:
   deploy:
-    runs-on: self-hosted  # This is the self-hosted runner
+    runs-on: ubuntu-latest # This is the self-hosted runner
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
