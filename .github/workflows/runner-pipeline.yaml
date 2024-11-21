@@ -35,7 +35,11 @@ jobs:
       
       - name: Creating namespace
         run: |
-          kubectl create ns github-actions 
+          if ! kubectl get namespace github-actions; then
+            kubectl create ns github-actions
+          else
+            echo "Namespace github-actions already exists. Skipping creation."
+          fi 
           
       - name: Apply Kubernetes Deployment
         run: |
