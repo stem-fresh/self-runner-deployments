@@ -18,11 +18,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Google Cloud CLI
-        uses: google-github-actions/setup-gcloud@v1
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
         with:
-          project_id: ${{ env.PROJECT_ID }}
-          credentials: ${{ env.SERVICE_ACCOUNT_KEY }}
+          credentials_json: ${{env.SERVICE_ACCOUNT_KEY}}
 
       - name: Authenticate to Google Cloud
         run: |
