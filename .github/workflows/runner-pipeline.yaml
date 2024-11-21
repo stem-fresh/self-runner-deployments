@@ -23,6 +23,12 @@ jobs:
         with:
           credentials_json: ${{env.SERVICE_ACCOUNT_KEY}}
 
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          version: 'latest'
+          install_components: 'kubectl'
+
       - name: Authenticate to Google Cloud
         run: |
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --zone us-central1-f --project ${{ env.PROJECT_ID }}
