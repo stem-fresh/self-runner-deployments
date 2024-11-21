@@ -1,0 +1,41 @@
+name: Deploy GitHub Runner to Kubernetes
+
+on:
+  push:
+    branches:
+      - main  # Adjust according to your branch
+
+env:
+  PROJECT_ID: self-hosted-runner-442204  # Global environment variable for project ID
+  CLUSTER_NAME: self-runner-private-cluster  # Global environment variable for cluster name
+  SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SA_KEY }}  # Secret stored in GitHub Secrets for service account key
+  ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}  # Secret stored in GitHub Secrets for GitHub access token
+
+jobs:
+  deploy:
+    runs-on: self-hosted  # This is the self-hosted runner
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v0.9.0
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          credentials: ${{ env.SERVICE_ACCOUNT_KEY }}
+
+      - name: Authenticate to Google Cloud
+        run: |
+          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --zone us-central1-f --project ${{ env.PROJECT_ID }}
+      
+      - name: Creating namespace
+        run: |
+          kubectl create ns github-actions 
+
+      - name: Update Deployment with GitHub Secret Token
+        run: |
+          kubectl set env deployment/github-runner ACCESS_TOKEN=${{ env.ACCESS_TOKEN }} --namespace=github-actions
+
+      - name: Apply Kubernetes Deployment
+        run: |
+          kubectl apply -f runner_deploy.yaml  
