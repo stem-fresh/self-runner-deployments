@@ -36,11 +36,13 @@ jobs:
       - name: Creating namespace
         run: |
           kubectl create ns github-actions 
-
+          
+      - name: Apply Kubernetes Deployment
+        run: |
+          kubectl apply -f runner_deploy.yaml  
+          
       - name: Update Deployment with GitHub Secret Token
         run: |
           kubectl set env deployment/github-runner ACCESS_TOKEN=${{ env.ACCESS_TOKEN }} --namespace=github-actions
 
-      - name: Apply Kubernetes Deployment
-        run: |
-          kubectl apply -f runner_deploy.yaml  
+     
