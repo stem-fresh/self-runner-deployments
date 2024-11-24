@@ -13,6 +13,8 @@ spec:
       labels:
         app: sonarqube
     spec:
+      securityContext:
+        fsGroup: 1000  # Apply fsGroup at the pod level
       containers:
       - name: sonarqube
         image: sonarqube:lts
@@ -24,10 +26,6 @@ spec:
         volumeMounts:
         - name: sonarqube-data
           mountPath: "/opt/sonarqube/data"
-        securityContext:
-          runAsUser: 1000
-          runAsGroup: 1000
-          fsGroup: 1000
       volumes:
       - name: sonarqube-data
         persistentVolumeClaim:
