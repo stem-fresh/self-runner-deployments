@@ -1,3 +1,15 @@
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+********************************************************************************
+helm install postgresql bitnami/postgresql \
+--namespace sonarqube \
+--create-namespace \
+--set global.postgresql.auth.database=sonarqube \
+--set global.postgresql.auth.username=sonarqube_user \
+--set global.postgresql.auth.password=<give any password> \
+--set primary.persistence.size=10Gi  
+
+***************************************************************************************
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,6 +27,28 @@ spec:
     spec:
       securityContext:
         fsGroup: 1000  # Apply fsGroup at the pod level
+      initContainers:
+      - name: sysctl-init
+        image: busybox:latest
+        securityContext:
+          privileged: true
+        command:
+        - sh
+        - -c
+        - sysctl -w vm.max_map_count=262144
+      - name: download-cnes-plugin
+        image: curlimages/curl:latest  # Using curlimages/curl container to download
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: sonarqube-plugin-volume
+          mountPath: /sonarqube-plugin-volume  # Mount the shared volume to the init container
+        command:
+        - sh
+        - -c
+        - |
+          # Download the CNES plugin from the GitHub release
+          curl -L -o /sonarqube-plugin-volume/sonar-cnes-report-4.3.0.jar https://github.com/cnescatlab/sonar-cnes-report/releases/download/4.3.0/sonar-cnes-report-4.3.0.jar
       containers:
       - name: sonarqube
         image: sonarqube:lts
@@ -23,10 +57,25 @@ spec:
         env:
         - name: SONAR_WEB_CONTEXT
           value: "/sonarqube"
+        - name: SONAR_JDBC_URL
+          value: "jdbc:postgresql://postgresql.sonarqube.svc.cluster.local:5432/sonarqube"
+        - name: SONAR_JDBC_USERNAME
+          value: "sonarqube_user"
+        - name: SONAR_JDBC_PASSWORD
+          value: ""
         volumeMounts:
         - name: sonarqube-data
           mountPath: "/opt/sonarqube/data"
+        - name: sonarqube-plugin-volume
+          mountPath: "/opt/sonarqube/extensions/plugins"  # This is where the plugins should be mounted
       volumes:
       - name: sonarqube-data
         persistentVolumeClaim:
           claimName: sonarqube-pvc
+      - name: sonarqube-plugin-volume
+        emptyDir: {}  # Temporary shared volume between initContainer and main container  
+
+
+*************************************************************************************
+
+ kubectl set env deployment/sonarqube SONAR_JDBC_PASSWORD=${{ env.postgress_password }} --namespace=sonarqube
