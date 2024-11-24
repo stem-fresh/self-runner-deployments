@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sonarqube-ingress
+  namespace: sonarqube
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  rules:
+  - host: sonar.irys-dev.com  # Replace with your domain
+    http:
+      paths:
+      - path: /sonarqube
+        pathType: Prefix
+        backend:
+          service:
+            name: sonarqube-service
+            port:
+              number: 9000
+  tls:
+  - hosts:
+    - sonar.irys-dev.com
+    secretName: tls-secret

@@ -1,0 +1,8 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: sonarqube-storage-class
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-ssd  # Use 'pd-ssd' for faster storage if needed
+reclaimPolicy: Retain  # Keeps the disk after PVC is deleted

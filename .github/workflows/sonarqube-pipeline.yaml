@@ -1,0 +1,88 @@
+name: Deploy Sonarqube to Kubernetes
+
+on:
+  push:
+    paths:
+      - 'sonarqube/**' # Trigger only when changes are made to files in the `sonarqube` folder
+
+env:
+  CLUSTER_NAME: cluster-name  # Global environment variable for cluster name
+  SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SA_KEY }}  # Secret stored in GitHub Secrets for service account key
+  ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}  # Secret stored in GitHub Secrets for GitHub access token
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest # This is the self-hosted runner
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{env.SERVICE_ACCOUNT_KEY}}
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          version: 'latest'
+          install_components: 'kubectl'
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{env.SERVICE_ACCOUNT_KEY}}
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          version: 'latest'
+          install_components: 'kubectl'
+
+      - name: Authenticate to Google Cloud
+        run: |
+          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --zone us-central1-f --project ${{ env.PROJECT_ID }}
+
+      - name: Install cert-manager
+
+        run: |
+
+          # Installing cert-manager
+
+          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.10.0/cert-manager.yaml
+
+      - name: Install NGINX Ingress Controller
+
+        run: |
+
+          # Install NGINX Ingress Controller from the official manifest
+
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+
+      - name: Change to sonarqube directory
+        run: |
+          cd sonarqube
+
+      - name: Creating namespace
+        run: |
+          kubectl apply -f sonar_namespace.yaml
+
+      - name: Apply Kubernetes Deployment for pvc and storage
+        run: |
+          kubectl apply -f sonarqube_pvc.yaml sonarqube_storageclass.yaml  
+
+      - name: Apply Kubernetes Deployment
+        run: |
+          kubectl apply -f sonar_deployment.yaml sonarqube_service.yaml 
+
+      - name: Apply Kubernetes Deployment Ingress
+        run: |
+          kubectl apply -f sonarqube_ingress.yaml
+
+      - name: Apply Kubernetes Deployment Certificate
+        run: |
+          kubectl apply -f certificate.yaml
+
+      - name: Apply Kubernetes Deployment HPA
+        run: |
+          kubectl apply -f hpa.yaml
