@@ -90,3 +90,16 @@ jobs:
       - name: Apply Kubernetes Deployment HPA
         run: |
           kubectl apply -f hpa.yaml
+      - name: Install Helm
+        uses: azure/setup-helm@v1
+
+      - name: Add Helm Repos
+        run: |
+          helm repo add argo https://argoproj.github.io/argo-helm
+          helm repo update
+
+      - name: Deploy ArgoCD with Helm
+        run: |
+          helm upgrade --install argocd argo/argo-cd \
+            --namespace argocd --create-namespace \
+            -f argocd-values.yaml
