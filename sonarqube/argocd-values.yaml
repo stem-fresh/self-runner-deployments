@@ -1,0 +1,94 @@
+redis-ha:
+  enabled: true
+
+controller:
+  replicas: 3
+
+server:
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+  tls:
+    enabled: false
+  service:
+    type: ClusterIP
+  configs:
+    params:
+      "server.basehref": "/argocd"
+      "server.rootpath": "/argocd"
+      "server.disable.auth": false
+      "server.enable.gzip": true
+      "server.enable.proxy.extension": false
+      "server.insecure": true
+
+repoServer:
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+
+applicationSet:
+  replicas: 3
+
+resources:
+  controller:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+  server:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+  repoServer:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+metrics:
+  enabled: true
+
+redis:
+  usePassword: false
+  persistence:
+    enabled: true
+    storageClass: "standard"
+    accessModes:
+      - ReadWriteOnce
+    size: 5Gi
+
+rbac: {}
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - argocd-server
+          topologyKey: "kubernetes.io/hostname"
+
+logging:
+  format: "json"
+  level: "info"
+
+audit:
+  enabled: true
+  logLevel: "info"
